@@ -77,6 +77,11 @@ export async function initProject(
       durationMs: Date.now() - writerStart,
     });
 
+    // Step 3: Clean up EXPLORATION.md after context tree is built
+    logger.info("Cleaning up EXPLORATION.md");
+    await fs.remove(explorationPath);
+    logger.debug("EXPLORATION.md deleted", { explorationPath });
+
     logger.info("Project initialization completed successfully", {
       projectName,
     });
