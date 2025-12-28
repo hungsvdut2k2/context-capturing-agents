@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "context-capturing-agents": {
+      "command": "node",
+      "args": ["./dist/index.js"],
+      "env": {
+        "OPENAI_API_KEY": "YOUR_OPENAI_API_KEY_HERE"
+      }
+    }
+  }
+}

@@ -29,13 +29,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "init_project",
         description:
-          "Initialize context capturing for a project. This will explore the codebase using an AI agent and create a structured context tree in the memory directory.",
+          "REQUIRED FIRST STEP: Initialize context capturing for a new project before using search_context or update_context. Run this when: (1) Starting work on a new codebase, (2) User asks to 'set up context capturing', (3) search_context fails because no context exists. This explores the codebase and creates a structured knowledge base.",
         inputSchema: {
           type: "object",
           properties: {
             projectPath: {
               type: "string",
-              description: "Absolute path to the project directory to analyze",
+              description: "Absolute path to the project directory to analyze (e.g., '/Users/name/my-project')",
             },
           },
           required: ["projectPath"],
@@ -44,17 +44,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "search_context",
         description:
-          "Search the captured context tree for relevant knowledge. Uses an AI agent to understand your query, find matching topics, and return summarized information with references.",
+          "Search project knowledge base for architecture, patterns, and implementation details. USE THIS WHEN: (1) User asks 'how does X work?', (2) Need to understand existing patterns before implementing, (3) Looking for where something is implemented, (4) Need context about project architecture. Returns summarized knowledge with file references. Requires init_project to be run first.",
         inputSchema: {
           type: "object",
           properties: {
             query: {
               type: "string",
-              description: "What you want to know about the project (e.g., 'How does authentication work?')",
+              description: "Natural language question about the project (e.g., 'How does authentication work?', 'Where are API endpoints defined?', 'What patterns are used for state management?')",
             },
             projectName: {
               type: "string",
-              description: "Name of the project to search (optional - will auto-detect from cwd or use single available project)",
+              description: "Project name (optional - auto-detects from current directory)",
             },
           },
           required: ["query"],
@@ -63,17 +63,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "update_context",
         description:
-          "Update the context tree with new information or changes. Uses an AI agent to analyze the provided context, determine what needs to be updated/created/skipped, and make the appropriate changes.",
+          "Keep the project knowledge base in sync with code changes. USE THIS AFTER: (1) Implementing a new feature, (2) Refactoring existing code, (3) Changing architecture or patterns, (4) Adding new modules or components. Provide a description of what changed so the knowledge base stays accurate for future queries.",
         inputSchema: {
           type: "object",
           properties: {
             context: {
               type: "string",
-              description: "Description of what changed or new information to add (e.g., 'Added JWT authentication middleware to API routes')",
+              description: "Description of code changes made (e.g., 'Added JWT authentication middleware', 'Refactored user service to use repository pattern', 'Created new payment processing module')",
             },
             projectName: {
               type: "string",
-              description: "Name of the project to update (optional - will auto-detect from cwd or use single available project)",
+              description: "Project name (optional - auto-detects from current directory)",
             },
           },
           required: ["context"],
