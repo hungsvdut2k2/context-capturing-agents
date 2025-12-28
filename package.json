@@ -1,0 +1,49 @@
+{
+  "name": "context-capturing-agents",
+  "version": "1.0.0",
+  "description": "MCP server for Claude Code",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "context-capturing-agents": "dist/index.js",
+    "cca": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hungsvdut2k2/context-capturing-agents.git"
+  },
+  "keywords": [
+    "mcp",
+    "claude",
+    "anthropic"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hungsvdut2k2/context-capturing-agents/issues"
+  },
+  "homepage": "https://github.com/hungsvdut2k2/context-capturing-agents#readme",
+  "dependencies": {
+    "@langchain/core": "^0.3.0",
+    "@langchain/langgraph": "^0.2.0",
+    "@langchain/openai": "^0.3.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "dotenv": "^17.2.3",
+    "fs-extra": "^11.0.0",
+    "glob": "^10.0.0",
+    "openai": "^4.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "types": "./dist/index.d.ts"
+}
