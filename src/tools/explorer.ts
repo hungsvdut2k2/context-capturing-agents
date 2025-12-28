@@ -29,6 +29,22 @@ const GLOB_IGNORE_PATTERNS = [
   "**/.nyc_output/**",
 ];
 
+// Known AI agent context files to look for in projects
+const AGENT_CONTEXT_FILES = [
+  "CLAUDE.md",
+  ".claude",
+  "agents.md",
+  "AGENTS.md",
+  ".cursor/rules",
+  ".cursorrules",
+  ".github/copilot-instructions.md",
+  "COPILOT.md",
+  ".ai/context.md",
+  ".ai/instructions.md",
+  "AI_CONTEXT.md",
+  "CONTEXT.md",
+];
+
 export function createExplorerTools(state: AgentStateType) {
   const { projectPath, memoryPath, explorationPath } = state;
   logger.debug("Creating explorer tools", { projectPath, memoryPath });
@@ -234,11 +250,91 @@ export function createExplorerTools(state: AgentStateType) {
     }
   );
 
+  const readAgentContextTool = tool(
+    async () => {
+      logger.info("read_agent_context called");
+      const foundContexts: { file: string; content: string }[] = [];
+
+      for (const contextFile of AGENT_CONTEXT_FILES) {
+        const fullPath = path.join(projectPath, contextFile);
+        try {
+          if (await fs.pathExists(fullPath)) {
+            const stat = await fs.stat(fullPath);
+
+            if (stat.isDirectory()) {
+              // Handle directory case (like .cursor/rules or .claude)
+              const entries = await fs.readdir(fullPath);
+              for (const entry of entries) {
+                const entryPath = path.join(fullPath, entry);
+                const entryStat = await fs.stat(entryPath);
+                if (entryStat.isFile()) {
+                  const content = await readFileContent(entryPath);
+                  if (content) {
+                    foundContexts.push({
+                      file: path.join(contextFile, entry),
+                      content: content.length > 5000
+                        ? content.slice(0, 5000) + "\n\n... [truncated]"
+                        : content,
+                    });
+                    logger.debug("Found agent context in directory", {
+                      file: path.join(contextFile, entry)
+                    });
+                  }
+                }
+              }
+            } else {
+              // Handle file case
+              const content = await readFileContent(fullPath);
+              if (content) {
+                foundContexts.push({
+                  file: contextFile,
+                  content: content.length > 5000
+                    ? content.slice(0, 5000) + "\n\n... [truncated]"
+                    : content,
+                });
+                logger.debug("Found agent context file", { file: contextFile });
+              }
+            }
+          }
+        } catch (error) {
+          logger.warn("Error reading agent context file", {
+            file: contextFile,
+            error: String(error)
+          });
+        }
+      }
+
+      if (foundContexts.length === 0) {
+        logger.info("No agent context files found");
+        return "No AI agent context files found in this project.";
+      }
+
+      logger.info("Agent context files found", { count: foundContexts.length });
+
+      let result = `# Existing AI Agent Context\n\nFound ${foundContexts.length} context file(s):\n\n`;
+
+      for (const ctx of foundContexts) {
+        result += `## ${ctx.file}\n\n\`\`\`\n${ctx.content}\n\`\`\`\n\n`;
+      }
+
+      return result;
+    },
+    {
+      name: "read_agent_context",
+      description:
+        "Read existing AI agent context files from the project (CLAUDE.md, .cursor/rules, agents.md, etc.). " +
+        "Use this to understand any existing project documentation or instructions meant for AI coding assistants. " +
+        "Integrate this information into your exploration findings.",
+      schema: z.object({}),
+    }
+  );
+
   return [
     readFileTool,
     listDirectoryTool,
     searchFilesTool,
     writeExplorationTool,
     updateExplorationTool,
+    readAgentContextTool,
   ];
 }

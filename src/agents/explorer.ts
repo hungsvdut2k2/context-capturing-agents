@@ -40,7 +40,9 @@ export async function runExplorerAgent(state: AgentStateType): Promise<void> {
     {
       messages: [
         new HumanMessage(
-          "Please explore the codebase and document your findings. Start by listing the directory structure, then read key files, and finally write a comprehensive EXPLORATION.md file."
+          "Please explore the codebase and document your findings. " +
+          "IMPORTANT: Start by calling read_agent_context to check for existing AI agent documentation (CLAUDE.md, .cursor/rules, agents.md, etc.). " +
+          "Then list the directory structure, read key files, and finally write a comprehensive EXPLORATION.md file that integrates both your findings and any existing agent context."
         ),
       ],
     },
