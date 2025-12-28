@@ -3,6 +3,7 @@ import "dotenv/config";
 import path from "path";
 import { initProject } from "./mcp-tools/init-project.js";
 import { searchContext } from "./mcp-tools/search-context.js";
+import { updateContext } from "./mcp-tools/update-context.js";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -46,6 +47,10 @@ Commands:
     --query, -q       The search query (required)
     --dir, -d         Project directory or name (optional, auto-detects from cwd)
 
+  update              Update context tree with new information
+    --context, -c     Description of changes or new info (required)
+    --dir, -d         Project directory or name (optional, auto-detects from cwd)
+
 Options:
   --help, -h          Show this help message
 
@@ -54,6 +59,8 @@ Examples:
   cca init /path/to/project             # Initialize specific project
   cca search --query "authentication"   # Search in auto-detected project
   cca search -q "API endpoints" -d .    # Search in current directory project
+  cca update --context "Added JWT auth" # Update with new info
+  cca update -c "Removed legacy API"    # Update (can also delete outdated info)
 `);
 }
 
@@ -115,6 +122,45 @@ async function main() {
       console.log("─".repeat(50) + "\n");
     } else {
       console.error(`\n❌ Search failed: ${result.error}\n`);
+      process.exit(1);
+    }
+  } else if (command === "update") {
+    const flags = parseFlags(args.slice(1));
+
+    // Support both --context and -c, --dir and -d
+    const context = (flags.context || flags.c) as string | undefined;
+    const dir = (flags.dir || flags.d) as string | undefined;
+
+    if (!context) {
+      console.error("\n❌ Error: --context (-c) is required for update\n");
+      printUsage();
+      process.exit(1);
+    }
+
+    // Resolve project info from directory if provided
+    let projectName: string | undefined;
+    let projectPath: string | undefined;
+
+    if (dir) {
+      projectPath = path.resolve(dir);
+      projectName = path.basename(projectPath);
+    }
+
+    console.log(`\n📝 Updating context with: "${context}"\n`);
+
+    const result = await updateContext({
+      context,
+      projectName,
+      projectPath,
+    });
+
+    if (result.success) {
+      console.log(`\n✅ Context updated for project: ${result.projectName}\n`);
+      console.log("─".repeat(50));
+      console.log(result.result);
+      console.log("─".repeat(50) + "\n");
+    } else {
+      console.error(`\n❌ Update failed: ${result.error}\n`);
       process.exit(1);
     }
   } else {

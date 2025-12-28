@@ -6,7 +6,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { initProject, searchContext } from "./mcp-tools/index.js";
+import { initProject, searchContext, updateContext } from "./mcp-tools/index.js";
 import { serverLogger } from "./utils/logger.js";
 
 const server = new Server(
@@ -58,6 +58,25 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
           },
           required: ["query"],
+        },
+      },
+      {
+        name: "update_context",
+        description:
+          "Update the context tree with new information or changes. Uses an AI agent to analyze the provided context, determine what needs to be updated/created/skipped, and make the appropriate changes.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            context: {
+              type: "string",
+              description: "Description of what changed or new information to add (e.g., 'Added JWT authentication middleware to API routes')",
+            },
+            projectName: {
+              type: "string",
+              description: "Name of the project to update (optional - will auto-detect from cwd or use single available project)",
+            },
+          },
+          required: ["context"],
         },
       },
     ],
@@ -127,6 +146,38 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           {
             type: "text",
             text: `Search failed: ${result.error}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  if (name === "update_context") {
+    const { context, projectName } = args as { context: string; projectName?: string };
+    serverLogger.info("Starting update_context", { contextLength: context?.length, projectName });
+
+    const result = await updateContext({ context, projectName });
+
+    if (result.success) {
+      serverLogger.info("update_context completed successfully", {
+        projectName: result.projectName,
+      });
+      return {
+        content: [
+          {
+            type: "text",
+            text: result.result,
+          },
+        ],
+      };
+    } else {
+      serverLogger.error("update_context failed", { error: result.error });
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Update failed: ${result.error}`,
           },
         ],
         isError: true,
