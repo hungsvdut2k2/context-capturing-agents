@@ -6,7 +6,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { initProject } from "./mcp-tools/index.js";
+import { initProject, searchContext } from "./mcp-tools/index.js";
 import { serverLogger } from "./utils/logger.js";
 
 const server = new Server(
@@ -39,6 +39,25 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
           },
           required: ["projectPath"],
+        },
+      },
+      {
+        name: "search_context",
+        description:
+          "Search the captured context tree for relevant knowledge. Uses an AI agent to understand your query, find matching topics, and return summarized information with references.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            query: {
+              type: "string",
+              description: "What you want to know about the project (e.g., 'How does authentication work?')",
+            },
+            projectName: {
+              type: "string",
+              description: "Name of the project to search (optional - will auto-detect from cwd or use single available project)",
+            },
+          },
+          required: ["query"],
         },
       },
     ],
@@ -76,6 +95,38 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           {
             type: "text",
             text: `Failed to initialize project: ${result.error}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  if (name === "search_context") {
+    const { query, projectName } = args as { query: string; projectName?: string };
+    serverLogger.info("Starting search_context", { query, projectName });
+
+    const result = await searchContext({ query, projectName });
+
+    if (result.success) {
+      serverLogger.info("search_context completed successfully", {
+        projectName: result.projectName,
+      });
+      return {
+        content: [
+          {
+            type: "text",
+            text: result.result,
+          },
+        ],
+      };
+    } else {
+      serverLogger.error("search_context failed", { error: result.error });
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Search failed: ${result.error}`,
           },
         ],
         isError: true,

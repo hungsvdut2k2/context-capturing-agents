@@ -50,3 +50,4 @@ temp/
 
 # MCP memory storage (if you don't want to track generated context)
 # ~/.context-capturing-agents/
+CLAUDE.md
